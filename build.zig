@@ -1,21 +1,25 @@
 const std = @import("std");
 
-pub fn build(b: *std.build.Builder) void {
-    // Standard target options allows the person running `zig build` to choose
-    // what target to build for. Here we do not override the defaults, which
-    // means any target is allowed, and the default is native. Other options
-    // for restricting supported target set are available.
-    const target = b.standardTargetOptions(.{});
+fn ObfuscateEmbeded() void {
+    var embeded = @embedFile("examples/example-c.exe");
+    var xored: [embeded.len]u8 = undefined;
+    for (embeded) |val, index| {
+        xored[index] = val ^ 0x42;
+    }
 
-    // Standard release options allow the person running `zig build` to select
-    // between Debug, ReleaseSafe, ReleaseFast, and ReleaseSmall.
+    var dir = std.fs.cwd();
+    dir.deleteFile("src/data.raw") catch {};
+    dir.writeFile("src/data.raw", &xored) catch {
+        std.debug.print("Unable to write file src/data.raw", .{});
+    };
+}
+
+pub fn build(b: *std.build.Builder) void {
+    const target = b.standardTargetOptions(.{});
     const mode = b.standardReleaseOptions();
-    // const zigwin32 = std.build.Pkg{
-    //     .name = "zigwin32",
-    //     .source = .{ .path = "libs/zigwin32/win32.zig" },
-    // };
+
+    ObfuscateEmbeded();
     const exe = b.addExecutable("zebroid", "src/main.zig");
-    // exe.addPackage(zigwin32);
     exe.setTarget(target);
     exe.setBuildMode(mode);
     const cflags = [_][]const u8{

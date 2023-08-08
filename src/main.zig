@@ -8,8 +8,8 @@ pub fn main() !void {
     // to prevent conflicts with the C code we are using
     var allocator = std.heap.c_allocator;
     // gets the binary from memory
-    std.debug.print("Unpacker binary\n", .{});
+    std.debug.print("Getting packed data\n", .{});
     var binary = try packer.getBinary(allocator);
-    std.debug.print("Got binary from memory {s}\n", .{binary.data[0..2]});
+    std.debug.print("Unapcking data\n", .{});
     try unpacker.unpack(binary);
 }

@@ -13,9 +13,9 @@ BOOL ImageLoadImports(LPBYTE image){
 	PSTR name = NULL;
 	HMODULE dll = INVALID_HANDLE_VALUE;
 	PIMAGE_THUNK_DATA64 lookupTable = NULL;
-	PIMAGE_THUNK_DATA64 addressTable;
+	PIMAGE_THUNK_DATA64 addressTable = NULL;
 	FARPROC procedure = NULL;
-	ULONGLONG lookupAdress = 0;
+	ULONGLONG lookupAddress = 0;
 	PIMAGE_IMPORT_BY_NAME importName = NULL;
 
 	header = getNtHeaders(image);
@@ -25,7 +25,6 @@ BOOL ImageLoadImports(LPBYTE image){
 	}
 
 	descriptor =(PIMAGE_IMPORT_DESCRIPTOR)(image + directory.VirtualAddress);
-
 	while (descriptor->OriginalFirstThunk != 0){
 		name = (PSTR)(image + descriptor->Name);
 		dll = LoadLibraryA(name);
@@ -36,15 +35,15 @@ BOOL ImageLoadImports(LPBYTE image){
 		addressTable = (PIMAGE_THUNK_DATA64)(image + descriptor->FirstThunk);
 		while (lookupTable->u1.AddressOfData != 0){
 			procedure = NULL;
-			lookupAdress = lookupTable->u1.AddressOfData;
-			if ((lookupAdress & IMAGE_ORDINAL_FLAG64) != 0){
-				procedure = GetProcAddress(dll, (LPCSTR)(lookupAdress & 0xFFFFFFFF));
+			lookupAddress = lookupTable->u1.AddressOfData;
+			if ((lookupAddress & IMAGE_ORDINAL_FLAG64) != 0){
+				procedure = GetProcAddress(dll, (LPCSTR)(lookupAddress & 0xFFFFFFFF));
 				if (procedure == NULL) {
 					return FALSE;
 				}
 			}
 			else {
-				importName = (PIMAGE_IMPORT_BY_NAME)(image + lookupAdress);
+				importName = (PIMAGE_IMPORT_BY_NAME)(image + lookupAddress);
 				procedure = GetProcAddress(dll, importName->Name);
 				if (procedure == NULL) {
 					return FALSE;
@@ -102,7 +101,7 @@ BOOL ImageRelocate(LPBYTE image) {
 	return TRUE;
 }
 
-LPBYTE ImageLoadToMemory(LPBYTE image, UINT64 imageSize) {
+LPBYTE ImageLoadToMemory(LPBYTE image, SIZE_T imageSize) {
 	LPBYTE virtualImage = VirtualAlloc(NULL, imageSize,MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
 	if (virtualImage == NULL)
 		return NULL;

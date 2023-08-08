@@ -40,18 +40,25 @@ fn buildVirtualImage(binary: coff.Coff) ![]u8 {
 }
 
 pub fn unpack(binary: coff.Coff) !void {
+    std.debug.print("Starting\n", .{});
     const FALSE: c_int = 0;
+    std.debug.print("buildVirtualImage\n", .{});
     var image = try buildVirtualImage(binary);
     defer binary.allocator.free(image);
+
+    std.debug.print("ImageLoadToMemory, len={}\n", .{image.len});
     var virtual = libunpack.ImageLoadToMemory(image.ptr, image.len);
     if (virtual == null) {
         return PackerError.BinaryMappingError;
     }
+    std.debug.print("ImageLoadImports\n", .{});
     if (libunpack.ImageLoadImports(virtual) == FALSE) {
         return PackerError.ImportLoadingError;
     }
+    std.debug.print("ImageRelocate\n", .{});
     if (libunpack.ImageRelocate(virtual) == FALSE) {
         return PackerError.RelocationError;
     }
+    std.debug.print("ImageLoadToMemory\n", .{});
     libunpack.ImageRunEntrypoint(virtual);
 }
