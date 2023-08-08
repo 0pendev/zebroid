@@ -25,8 +25,16 @@ pub fn build(b: *std.build.Builder) void {
     const cflags = [_][]const u8{
         "-Wall",
     };
+    const csource = [_][]const u8{
+        "src/pe/get_nt_headers.c",
+        "src/pe/image_load_exports.c",
+        "src/pe/image_load_imports.c",
+        "src/pe/image_load_to_memory.c",
+        "src/pe/image_relocate.c",
+        "src/pe/image_run_entrypoint.c",
+    };
     exe.addIncludePath("src");
-    exe.addCSourceFile("src/unpacker.c", &cflags);
+    exe.addCSourceFiles(&csource, &cflags);
     exe.linkLibC();
     exe.install();
 

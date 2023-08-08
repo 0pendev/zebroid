@@ -4,7 +4,7 @@ const mem = std.mem;
 
 pub fn getBinary(allocator: mem.Allocator) !coff.Coff {
     var binary: coff.Coff = undefined;
-    // TODO: once zig 0.11.0 is release use json.Reader to
+    // TODO: once zig 0.11.0 releases use json.Reader to
     // parse a json file at comptime
     var embeded = @embedFile("data.raw");
     var data: []u8 = undefined;

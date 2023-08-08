@@ -1,5 +1,5 @@
-const libunpack = @cImport({
-    @cInclude("unpacker.h");
+const pe = @cImport({
+    @cInclude("pe/pe.h");
 });
 const std = @import("std");
 const coff = std.coff;
@@ -9,6 +9,7 @@ pub const PackerError = error{
     BinaryMappingError,
     ImportLoadingError,
     RelocationError,
+    ExportLoadingError,
 };
 
 fn buildVirtualImage(binary: coff.Coff) ![]u8 {
@@ -47,18 +48,18 @@ pub fn unpack(binary: coff.Coff) !void {
     defer binary.allocator.free(image);
 
     std.debug.print("ImageLoadToMemory, len={}\n", .{image.len});
-    var virtual = libunpack.ImageLoadToMemory(image.ptr, image.len);
+    var virtual = pe.ImageLoadToMemory(image.ptr, image.len);
     if (virtual == null) {
         return PackerError.BinaryMappingError;
     }
     std.debug.print("ImageLoadImports\n", .{});
-    if (libunpack.ImageLoadImports(virtual) == FALSE) {
+    if (pe.ImageLoadImports(virtual) == FALSE) {
         return PackerError.ImportLoadingError;
     }
     std.debug.print("ImageRelocate\n", .{});
-    if (libunpack.ImageRelocate(virtual) == FALSE) {
+    if (pe.ImageRelocate(virtual) == FALSE) {
         return PackerError.RelocationError;
     }
     std.debug.print("ImageLoadToMemory\n", .{});
-    libunpack.ImageRunEntrypoint(virtual);
+    pe.ImageRunEntrypoint(virtual);
 }
