@@ -7,7 +7,7 @@ BOOL ImageRelocate(LPBYTE image) {
 	UINT_PTR delta = {0};
 	PIMAGE_BASE_RELOCATION relocationTable = NULL;
 	SIZE_T relocations = 0;
-	UINT16* relocationData = NULL;
+	PUINT16 relocationData = NULL;
 	UINT16 relocation = 0;
 	UINT16 type = 0;
 	UINT16 offset = 0;
@@ -27,7 +27,7 @@ BOOL ImageRelocate(LPBYTE image) {
 	
 	while (relocationTable->VirtualAddress != 0){
 		relocations = (relocationTable->SizeOfBlock - sizeof(IMAGE_BASE_RELOCATION)) / sizeof(UINT16);
-		relocationData = (UINT16*)(&relocationTable[1]);
+		relocationData = (PUINT16)(&relocationTable[1]);
 		for (SIZE_T i=0; i<relocations; ++i){
 			relocation = relocationData[i];
 			type = relocation >> 12;
