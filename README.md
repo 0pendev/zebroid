@@ -9,5 +9,5 @@ It is pretty unusable and is just a POC to try out zig build scripts and to lear
 Update the path to the binary to embed in build.zig and run:
 
 ```bash
-zig build -Dtarget=x86_64-windows -Drelease-fast
+zig build -Dtarget=x86_64-windows -Doptimize=ReleaseSmall
 ``` 

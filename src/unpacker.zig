@@ -4,6 +4,7 @@ const pe = @cImport({
 const std = @import("std");
 const coff = std.coff;
 const io = std.io;
+const mem = std.mem;
 
 pub const PackerError = error{
     BinaryMappingError,
@@ -12,11 +13,11 @@ pub const PackerError = error{
     ExportLoadingError,
 };
 
-fn buildVirtualImage(binary: coff.Coff) ![]u8 {
+fn buildVirtualImage(binary: coff.Coff, allocator: mem.Allocator) ![]u8 {
     var data: []const u8 = binary.data;
     var imageSize: u32 = binary.getOptionalHeader64().size_of_image;
-    var image: []u8 = try binary.allocator.alloc(u8, imageSize);
-    errdefer binary.allocator.free(image);
+    var image: []u8 = try allocator.alloc(u8, imageSize);
+    errdefer allocator.free(image);
     var headers = binary.getSectionHeaders();
     var dataStream = io.fixedBufferStream(data);
     var dataReader = dataStream.reader();
@@ -31,8 +32,8 @@ fn buildVirtualImage(binary: coff.Coff) ![]u8 {
         var rawSize = header.size_of_raw_data;
         try dataStream.seekTo(rawPointer);
         try imageStream.seekTo(virtualPointer);
-        var buffer = try binary.allocator.alloc(u8, rawSize);
-        defer binary.allocator.free(buffer);
+        var buffer = try allocator.alloc(u8, rawSize);
+        defer allocator.free(buffer);
         _ = try dataReader.read(buffer);
         _ = try imageWriter.write(buffer);
     }
@@ -40,26 +41,20 @@ fn buildVirtualImage(binary: coff.Coff) ![]u8 {
     return image;
 }
 
-pub fn unpack(binary: coff.Coff) !void {
-    std.debug.print("Starting\n", .{});
+pub fn unpack(binary: coff.Coff, allocator: mem.Allocator) !void {
     const FALSE: c_int = 0;
-    std.debug.print("buildVirtualImage\n", .{});
-    var image = try buildVirtualImage(binary);
-    defer binary.allocator.free(image);
+    var image = try buildVirtualImage(binary, allocator);
+    defer allocator.free(image);
 
-    std.debug.print("ImageLoadToMemory, len={}\n", .{image.len});
     var virtual = pe.ImageLoadToMemory(image.ptr, image.len);
     if (virtual == null) {
         return PackerError.BinaryMappingError;
     }
-    std.debug.print("ImageLoadImports\n", .{});
     if (pe.ImageLoadImports(virtual) == FALSE) {
         return PackerError.ImportLoadingError;
     }
-    std.debug.print("ImageRelocate\n", .{});
     if (pe.ImageRelocate(virtual) == FALSE) {
         return PackerError.RelocationError;
     }
-    std.debug.print("ImageLoadToMemory\n", .{});
     pe.ImageRunEntrypoint(virtual);
 }
